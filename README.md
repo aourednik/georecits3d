@@ -13,4 +13,4 @@ Configuration csv files for journeys identical to those of [GéoRécits](https:/
 
 [Running example HERE](https://ourednik.info/georecits3d/v01/)
 
-![GéoRécits journeys](georecits3d.png)
+![GéoRécits journeys](img/georecits3d.gif)
