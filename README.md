@@ -9,6 +9,8 @@ GéoRécits3D allows you to both in space-time cuboid. It is written using HTML5
 
 Configuration csv files for journeys identical to those of [GéoRécits](https://github.com/aourednik/georecits) can be used.
 
-[Running example HERE](https://ourednik.info/georecits3d/)
+[Full documentatio HERE](https://ourednik.info/georecits3d/)
+
+[Running example HERE](https://ourednik.info/georecits3d/v01/)
 
 ![GéoRécits journeys](georecits3d.png)
