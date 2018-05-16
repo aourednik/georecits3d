@@ -1,0 +1,12 @@
+source,target,idperson,time
+"Khovsgol","OulanBator",A,540
+"OulanBator","Oslo",A,1000
+"Oslo","Zurich",A,120
+"Zurich","Neuchatel",A,60
+"Prague","Paris",B,60
+"Paris","Geneve",B,180
+"Geneve","Lausanne",B,50
+"Lausanne","Neuchatel",B,60
+"Oslo","Prague",C,300
+"Prague","ZurichC",C,240
+"ZurichC","NeuchatelC",C,60

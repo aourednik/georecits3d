@@ -1,0 +1,23 @@
+{
+    "name": "georecits3d",
+    "version": "0.1",
+    "description": "An application for mapping journeys and lived spaces in a web browser",
+    "main": "index.html",
+    "dependencies": {
+      "d3": "5.2.0",
+      "d3-geo":"1.10.0",
+      "d3-geo-projection": "2.4.0",
+      "d3-scale-chromatic": "0.3",
+      "three":"0.92.0"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/aourednik/georecits3d"
+    },
+    "keywords": [
+      "time geography",
+      "journey mapping"
+    ],
+    "author": "André Ourednik",
+    "license": "GNU-GPL"
+}

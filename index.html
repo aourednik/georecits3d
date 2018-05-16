@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset=utf-8>
+	<title>GéoRécits 3D</title>
+	<style>
+		body { margin: 0; }
+		canvas { width: 100%; height: 100% }
+		#sqrtscale {
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana;
+            color:white;
+			font-size: 13px;
+            z-index: 1000;
+            position:fixed;
+            bottom: 14px;
+            left: 20px;
+			top: 20px;
+        }
+	</style>
+	<script src="js/three.min.js"></script>
+	<script src="js/three.OrbitControls.js"></script>
+	<script src="js/d3.v5.min.js"></script>
+	<script src="js/d3-geo.v1.min.js"></script>
+	<script src="js/d3-geo-projection.v2.min.js"></script>
+	<script src="js/d3-scale-chromatic.v0.3.min.js"></script>
+</head>
+<body>
+<div id="sqrtscale">rotate <input type="checkbox" id="myCheck"></div>
+
+<script>
+// globals
+var lines = Array(), xscaler, yscaler, tscaler, circlesizer, individuals, placesxyextent = Array(), xyratio, cube, o, mapMesh;
+var colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+var renderer = new THREE.WebGLRenderer({
+	antialias:true
+});
+renderer.setSize( window.innerWidth, window.innerHeight );
+document.body.appendChild( renderer.domElement );
+
+// setting up the scene
+var scene = new THREE.Scene();
+// scene.background = new THREE.Color( 0xffffff );
+scene.fog = new THREE.FogExp2(0x000000,0.001);
+
+var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+var controls = new THREE.OrbitControls( camera );
+camera.position.set( 0, 0, 210 );
+camera.lookAt( new THREE.Vector3( 0, 0, 0 ) );
+controls.update();
+
+// use some lighting
+
+var light = new THREE.AmbientLight( 0x404040 ); // soft white light
+scene.add( light );
+
+var lights = [];
+lights[ 0 ] = new THREE.PointLight( 0xffffff, 1, 0 );
+lights[ 1 ] = new THREE.PointLight( 0xffffff, 1, 0 );
+lights[ 2 ] = new THREE.PointLight( 0xffffff, 1, 0 );
+
+lights[ 0 ].position.set( 0, 200, 0 );
+lights[ 1 ].position.set( 100, 200, 100 );
+lights[ 2 ].position.set( - 100, - 200, - 100 );
+
+scene.add( lights[ 0 ] );
+scene.add( lights[ 1 ] );
+scene.add( lights[ 2 ] );
+
+//creating geometrical objects
+
+var projection = d3.geoNaturalEarth1()// automatic centering has trouble with the more fun polyedric projections
+	.precision(0.1)
+;
+
+// load data
+// threejs has THREE.FileLoader() but data taubular handling will be easier with D3
+Promise.all([
+    d3.csv("data/places.csv"),
+    d3.csv("data/movements.csv"),
+    d3.json("data/basemap.geojson")
+]).then(([pla,mov,bas]) => {
+    space = {
+		'places' : pla,
+		'movements' : mov
+	};
+    basemap = bas;
+	placesxyextent['x'] = d3.extent(space['places'],function(d) { return - projection([+d.lon,+d.lat])[0];})
+	placesxyextent['y'] = d3.extent(space['places'],function(d) { return projection([+d.lon,+d.lat])[1];})
+	console.log("placesexytent",placesxyextent);
+	xyratio = (placesxyextent.x[0]-placesxyextent.x[1]) / (placesxyextent.y[0]-placesxyextent.y[1]);
+	definesizers();
+	makecube();
+    render();
+});
+
+
+////////////////////////////////////
+// CUBE  ----------------------
+function makecube() {
+	console.log(xyratio);
+	var geometry = new THREE.BoxGeometry( 120, 120 / xyratio, 200 ); // makes the cube around the origin
+	o = { x:-50 , y: -50/xyratio , t:-100 } // the origin coordiate
+	var material1 = new THREE.MeshBasicMaterial( { 
+		color: 0xffffff,
+		transparent:true,
+		opacity:0.2,
+		side:THREE.DoubleSide
+	} );
+	var material2 = new THREE.MeshBasicMaterial( { 
+		color: 0xffffff,
+		transparent:true,
+		opacity:0.08,
+		side:THREE.BackSide
+	} );
+	var material3 = new THREE.MeshBasicMaterial( { 
+		color: 0xffffff,
+		transparent:true,
+		opacity:0.11,
+		side:THREE.BackSide
+	} );
+	var materials = [
+		material3, // Left side
+		material3, // Right side
+		material2, // Top side  
+		material2, // Bottom side 
+		material1, // BASEMAP TOP
+		material1  // BASEMAP BOTTOM 
+	];
+
+	cube = new THREE.Mesh( geometry, materials );
+	scene.add( cube );
+}
+
+function render() {
+	space['places'].forEach(p => { 
+        p['x'] = xscaler(- projection([p.lon,p.lat])[0]);
+		p['y'] = yscaler(projection([p.lon,p.lat])[1]);
+    });
+	space['movements'].forEach(m => {
+        m['source'] = space['places'].filter(p => p.id == m.source)[0];
+		m['target'] = space['places'].filter(p => p.id == m.target)[0];
+    });
+	console.log(space);
+
+	////////////////////////////////////
+	// TOPOGRAPHY ----------------------
+
+	basemap.features
+		//.filter(bf => bf.properties.NAME == "Switzerland" | bf.properties.NAME == "Norway" | bf.properties.NAME == "Mongolia" | bf.properties.NAME == "France")
+		.forEach(bf => { 
+			bf.geometry.coordinates[0].forEach(currentgeom => { 
+				//console.log("currentgeom",currentgeom)
+				// var currentgeom = [[ 8.580555, 47.66861 ],[ 8.580555, 47.66861 ], [ 8.610254, 47.667732 ], [ 8.610254, 47.667732 ], [ 8.580555, 47.66861 ] ] 
+				var shapepoints = Array();
+				currentgeom.forEach(c => {
+					var projcor = projection([c[0],c[1]])
+					shapepoints.push(new THREE.Vector2(
+						xscaler(- projcor[0]), 
+						yscaler(projcor[1])
+					));
+				});
+				//console.log("shapepoints",shapepoints);
+				var mapShape = new THREE.Shape(shapepoints);
+				var geometry = new THREE.ShapeGeometry( mapShape );
+				var material1 = new THREE.MeshBasicMaterial( { 
+					color: 0xffffff,
+					transparent:true,
+					opacity:0.5,
+					side:THREE.DoubleSide 
+				} );
+
+				var mapMesh = new THREE.Mesh( geometry, material1 ) ;
+				cube.add( mapMesh );
+				mapMesh.position.set(o.x, o.y, o.t+0.5);
+				// add contour
+				var edges = new THREE.EdgesGeometry( geometry );
+				var line = new THREE.LineSegments( 
+					edges, 
+					new THREE.LineBasicMaterial( { color: 0x000000 } ) 
+				);
+				cube.add( line );
+				line.position.set(o.x, o.y, o.t+0.5);
+			});
+		});
+
+	
+	////////////////////////////////////
+	// LINES ----------------------
+
+	var iplaces = d3.nest()
+        .key(function(d) { return d.idperson;})
+        .rollup(function(d) { 
+            return d3.sum(d, function(g) {return g.duration; });
+        })
+        .entries(space['places']);
+	var imovements = d3.nest()
+        .key(function(d) { return d.idperson;})
+        .rollup(function(d) { 
+            return d3.sum(d, function(g) {return g.time; });
+        })
+        .entries(space['movements']);
+    individuals = iplaces.concat(imovements);
+    individuals = d3.nest()
+        .key(function(d) { return d.key;})
+        .rollup(function(d) { 
+        return d3.sum(d, function(g) {return g.value; });
+    }).entries(individuals);
+
+	definesizers_t();
+
+	individuals.forEach(individual => { 
+		var clr = new THREE.Color( colorScale(individual.key) );
+		// console.log(colorScale(individual.key));
+		// clr.setHex( Math.random() * 0xffffff );
+		var material = new THREE.LineBasicMaterial( { 
+				color: clr,
+				linewidth: 5
+				// , fog:false
+			});
+		var geometry = new THREE.Geometry(); 
+		// var geometry = new THREE.CylinderGeometry(); // TODO allows for thickness			
+        
+		var mov = space['movements'].filter(m => m.idperson == individual.key);
+        console.log(individual.key,mov);
+
+        var start = mov[0];
+
+		// Not using a foreach construct with movements, in case the user did not put the movements in the right order in the csv file. 
+		// The first occurrence counts as start though.
+		var t = 0;
+        while (typeof start !== 'undefined') {
+
+			// console.log("current movement",start);
+
+			geometry.vertices.push(new THREE.Vector3( 
+				o.x + start.source.x, 
+				o.y + start.source.y, 
+				o.t + t
+			));
+
+			var point1 = new THREE.Vector3(
+				o.x + start.source.x, 
+				o.y + start.source.y, 
+				o.t + t
+			)
+
+			t += tscaler(start.source.duration); 
+			
+			geometry.vertices.push(new THREE.Vector3( 
+				o.x + start.source.x, 
+				o.y + start.source.y, 
+				o.t + t
+			));
+
+			var point2 = new THREE.Vector3(
+				o.x + start.source.x, 
+				o.y + start.source.y, 
+				o.t + t
+			)
+
+			var cyls = cylinderMesh(point1,point2,clr);
+			cube.add( cyls[0] );
+			cube.add( cyls[1] );
+				
+			t += tscaler(start.time);
+
+			geometry.vertices.push(new THREE.Vector3( 
+				o.x + start.target.x, 
+				o.y + start.target.y, 
+				o.t + t
+			));
+
+			var point3 = new THREE.Vector3(
+				o.x + start.source.x, 
+				o.y + start.source.y, 
+				o.t + t
+			)
+
+            start = mov.filter(m => m.source.id == start.target.id)[0];
+        }
+
+		console.log("geometry",geometry);
+		var line=new THREE.Line( geometry, material );
+		console.log("line",line);
+		lines.push(line);	
+
+    });
+
+	console.log("lines",lines);
+	lines.forEach(l => { 
+		cube.add( l );
+	});
+
+	animate();
+}
+
+function definesizers() {
+	xscaler = space['places'][0].lon ? 
+        d3.scaleLinear().range([0, 100]).domain(
+            placesxyextent['x']
+        ) : function (d) {return -10;}
+    ;
+	yscaler = space['places'][0].lat ? 
+        d3.scaleLinear().range([0, 100 / xyratio]).domain(
+            placesxyextent['y']
+        ) : function (d) {return -10;}
+    ;
+    circlesizer = space['places'][0].duration ? 
+        d3.scalePow().exponent(0.5).range([5, 25]).domain(
+            d3.extent(space['places'],function(d) { return +d.duration})
+        ) : function (d) {return 5;}
+    ;
+}
+function definesizers_t() {
+	tscaler = individuals[0].value ? 
+        d3.scaleLinear().range([0, 200]).domain([
+			0,
+            d3.max(individuals,function(d) { return +d.value})
+        ]) : function (d) {return 1;}
+    ;
+}
+
+var cylinderMesh = function( startPoint, endPoint, colour ) {
+	var cylmaterial = new THREE.MeshPhongMaterial( { 
+		color: colour,
+		transparent:true,
+		opacity:0.7,
+		side:THREE.FrontSide
+	} );
+	var cylLength = new THREE.Vector3().subVectors(endPoint, startPoint).length(); // find the length of a cylinder
+	var thickness = cylLength / 10;
+	var cylGeom1 = new THREE.CylinderBufferGeometry(0, thickness, cylLength / 2, 16,1,true); // true stands for openennded
+	var cylGeom2 = new THREE.CylinderBufferGeometry(thickness, 0, cylLength / 2, 16,1,true);
+	cylGeom1.translate(0, cylLength * 0.75, 0);
+	cylGeom2.translate(0, cylLength * 0.25, 0);
+	cylGeom1.rotateX(Math.PI / 2);
+	cylGeom2.rotateX(Math.PI / 2);
+	var cyl1 = new THREE.Mesh(cylGeom1, cylmaterial);
+	var cyl2 = new THREE.Mesh(cylGeom2, cylmaterial);
+	cyl1.position.copy(startPoint);
+	cyl2.position.copy(startPoint);
+	cyl1.lookAt(endPoint);  // and do the trick with orienation
+	cyl2.lookAt(endPoint);  // and do the trick with orienation
+	return [cyl1,cyl2];
+}
+
+
+// rendering the object. similar to d3.tick()
+function animate() {
+	requestAnimationFrame( animate );
+
+	if (document.getElementById("myCheck").checked) {
+		cube.rotation.x += 0.005;
+		cube.rotation.y += 0.005;
+	}
+	
+
+	/*
+	lines.forEach(l => { 
+		l.rotation.x += 0.003;
+    	l.rotation.y += 0.003;
+	});
+	*/
+
+	controls.update();
+
+	renderer.render( scene, camera );
+}
+
+</script>
+</body>
+</html>
