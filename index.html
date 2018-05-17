@@ -45,17 +45,22 @@ var colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 var cubeColor = 0xffffff;
 var backgroundColor = 0x000000; 
 var mapMeshColor = 0xffffff;
+var mapMeshOpacity = 0.3; 
 
 var renderer = new THREE.WebGLRenderer({
 	antialias:true
 });
 renderer.setSize( window.innerWidth, window.innerHeight );
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+
 document.body.appendChild( renderer.domElement );
 
 // setting up the scene
 var scene = new THREE.Scene();
 scene.background = new THREE.Color( backgroundColor );
-scene.fog = new THREE.FogExp2(backgroundColor,0.001);
+scene.fog = new THREE.Fog(backgroundColor,500,1000);
+
 
 var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
@@ -67,20 +72,19 @@ controls.update();
 // use some lighting
 
 var light = new THREE.AmbientLight( 0x404040 ); // soft white light
-scene.add( light );
+// scene.add( light );
 
 var lights = [];
 lights[ 0 ] = new THREE.PointLight( 0xffffff, 1, 0 );
 lights[ 1 ] = new THREE.PointLight( 0xffffff, 1, 0 );
-lights[ 2 ] = new THREE.PointLight( 0xffffff, 1, 0 );
+lights[ 0 ].castShadow = true; 
+lights[ 1 ].castShadow = true; 
 
-lights[ 0 ].position.set( 0, 200, 0 );
-lights[ 1 ].position.set( 100, 200, 100 );
-lights[ 2 ].position.set( - 100, - 200, - 100 );
+lights[ 0 ].position.set( -10, -200, 250 );
+lights[ 1 ].position.set( 100, 0, 200 );
 
 scene.add( lights[ 0 ] );
 scene.add( lights[ 1 ] );
-scene.add( lights[ 2 ] );
 
 //creating geometrical objects
 
@@ -120,7 +124,7 @@ function makecube() {
 		color: cubeColor,
 		transparent:true,
 		opacity:0.2,
-		side:THREE.DoubleSide
+		side:THREE.BackSide
 	} );
 	var material2 = new THREE.MeshPhongMaterial( { 
 		color: cubeColor,
@@ -142,11 +146,19 @@ function makecube() {
 		material2, // Top side  
 		material2, // Bottom side 
 		material1, // BASEMAP TOP
-		material1  // BASEMAP BOTTOM 
+		material2  // BASEMAP BOTTOM 
 	];
 
 	cube = new THREE.Mesh( geometry, materials );
+    // cube.castShadow = true;
+    cube.receiveShadow = true;
 	scene.add( cube );
+
+    // so that shadows can go through the cube
+    cube.customDepthMaterial = new THREE.MeshDepthMaterial( {
+        depthPacking: THREE.RGBADepthPacking,
+        alphaTest: 0.5
+    } );
 }
 
 
@@ -176,7 +188,7 @@ function render() {
 	space['places'].forEach(p => { 
         p['x'] = xscaler(-projection([p.lon,p.lat])[0]);
 		p['y'] = yscaler(projection([p.lon,p.lat])[1]);
-    });
+    }); // todo: this takes time. Work with projection scale. 
 	space['movements'].forEach(m => {
         m['source'] = space['places'].filter(p => p.id == m.source)[0];
 		m['target'] = space['places'].filter(p => p.id == m.target)[0];
@@ -191,47 +203,22 @@ function render() {
 		.forEach(bf => { 
 			bf.geometry.coordinates.forEach(polygon => { // TODO handles multipolygons but not holes
 				// var po = [[ 8.580555, 47.66861 ],[ 8.580555, 47.66861 ], [ 8.610254, 47.667732 ], [ 8.610254, 47.667732 ], [ 8.580555, 47.66861 ] ] 			
-				//polygon.forEach(currentgeom => { 
-					/*
-					var shapepoints = Array();
-					currentgeom.forEach(c => {
-						if (c.length > 2) {console.log("currentcoor",c.length);}
-						var projcor = projection([c[0],c[1]])
-						shapepoints.push(new THREE.Vector2(
-							xscaler(- projcor[0]), 
-							yscaler(projcor[1])
-						));
-					});
-					*/
-					//console.log("shapepoints",shapepoints);
 
 					var mapShape = createPolygonShape(polygon);
-
-					// currentgeom.forEach(c => {
-					// 	var projcor = projection([c[0],c[1]])
-					// 	shapepoints.push(new THREE.Vector2(
-					// 		xscaler(- projcor[0]), 
-					// 		yscaler(projcor[1])
-					// 	));
-					// });
-					
-					// polygonShape.holes.push(holeShape); // TODO add holes, see https://github.com/maptime-ams/geojson-3d/blob/gh-pages/js/geo.js
-
 					var geometry = new THREE.ShapeGeometry( mapShape );
-					var material1 = new THREE.MeshBasicMaterial( { 
+					var material1 = new THREE.MeshPhongMaterial( { // Phonng receives shadows
 						color: mapMeshColor,
 						transparent:true, 
-						opacity:0.17, // lightgrey = hsl 0,0,0.83
-						// depthWrite:false,
+						opacity:mapMeshOpacity, 
 						depthTest:true,
-						alphaTest:0, // below this opacity threshold, te layer is not rendered
+						alphaTest:0.02, // below this opacity threshold, te layer is not rendered
 						precision:'lowp',
-						// blending:THREE.AdditiveBlending  , // to hide overlaps
 						side:THREE.DoubleSide 
 					} );
 
 					var mapMesh = new THREE.Mesh( geometry, material1 ) ;
 					mapMesh.name = "map";
+                    mapMesh.receiveShadow = true;
 					cube.add( mapMesh );
 					mapMesh.position.set(o.x, o.y, o.t+0.5);
 					// add contour
@@ -296,31 +283,24 @@ function render() {
 
 			// console.log("current movement",start);
 
-			geometry.vertices.push(new THREE.Vector3( 
-				o.x + start.source.x, 
-				o.y + start.source.y, 
-				o.t + t
-			));
 
-			var point1 = new THREE.Vector3(
+            var point1 = new THREE.Vector3(
 				o.x + start.source.x, 
 				o.y + start.source.y, 
 				o.t + t
 			)
+
+			geometry.vertices.push(point1);
 
 			t += tscaler(start.source.duration); 
-			
-			geometry.vertices.push(new THREE.Vector3( 
-				o.x + start.source.x, 
-				o.y + start.source.y, 
-				o.t + t
-			));
 
-			var point2 = new THREE.Vector3(
+            var point2 = new THREE.Vector3(
 				o.x + start.source.x, 
 				o.y + start.source.y, 
 				o.t + t
 			)
+			
+			geometry.vertices.push(point2);
 
 			var cyls = cylinderMesh(point1,point2,clr);
 			cube.add( cyls[0] );
@@ -334,21 +314,11 @@ function render() {
 				o.t + t
 			));
 
-			var point3 = new THREE.Vector3(
-				o.x + start.source.x, 
-				o.y + start.source.y, 
-				o.t + t
-			)
-
             start = mov.filter(m => m.source.id == start.target.id)[0];
         }
-
-		// console.log("geometry",geometry);
 		var line=new THREE.Line( geometry, material );
-		// console.log("line",line);
-		// lines.push(line);
+		line.castShadow = true;
         cube.add( line );	
-
     });
 
 	animate();
@@ -400,6 +370,8 @@ var cylinderMesh = function( startPoint, endPoint, colour ) {
 	cylGeom2.rotateX(Math.PI / 2);
 	var cyl1 = new THREE.Mesh(cylGeom1, cylmaterial);
 	var cyl2 = new THREE.Mesh(cylGeom2, cylmaterial);
+    cyl1.castShadow = true;
+    cyl2.castShadow = true;
 	cyl1.position.copy(startPoint);
 	cyl2.position.copy(startPoint);
 	cyl1.lookAt(endPoint);  // and do the trick with orienation
@@ -415,11 +387,13 @@ function lightSwitch(myRadio) {
         cubeColor = 0xffffff;
         backgroundColor = 0x000000; 
         mapMeshColor = 0xffffff;
+        mapMeshOpacity = 0.25; 
         d3.select("#sqrtscale").style("color","white");
 	} else if (currentValue == 'light') {
-        cubeColor = 0x000000; 
+        cubeColor = 0xd3d3d3; // dim grey. If it is black, black shadows won't show on it
         backgroundColor = 0xffffff; 
         mapMeshColor = 0x000000; 
+        mapMeshOpacity = 0.10; // lightgrey = hsl 0,0,0.83
         d3.select("#sqrtscale").style("color","black");
 	}
     scene.background = new THREE.Color( backgroundColor );
