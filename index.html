@@ -72,7 +72,7 @@ controls.update();
 // use some lighting
 
 var light = new THREE.AmbientLight( 0x404040 ); // soft white light
-// scene.add( light );
+scene.add( light );
 
 var lights = [];
 lights[ 0 ] = new THREE.PointLight( 0xffffff, 1, 0 );
@@ -123,6 +123,7 @@ function makecube() {
 	var material1 = new THREE.MeshPhongMaterial( { 
 		color: cubeColor,
 		transparent:true,
+        depthWrite:false, // solves cube hiding the map 
 		opacity:0.2,
 		side:THREE.BackSide
 	} );
@@ -130,21 +131,21 @@ function makecube() {
 		color: cubeColor,
 		transparent:true,
 		opacity:0.08,
-        // blending:THREE.MultiplyBlending,
+        depthWrite:false, // solves cube hiding the map 
 		side:THREE.BackSide
 	} );
 	var material3 = new THREE.MeshPhongMaterial( { 
 		color: cubeColor,
 		transparent:true,
 		opacity:0.11,
-        // blending:THREE.MultiplyBlending,
+        depthWrite:false, // solves cube hiding the map 
 		side:THREE.BackSide
 	} );
 	var materials = [
 		material3, // Left side
 		material3, // Right side
-		material2, // Top side  
-		material2, // Bottom side 
+		material2, // Frront side  
+		material2, // Back side 
 		material1, // BASEMAP TOP
 		material2  // BASEMAP BOTTOM 
 	];
@@ -210,7 +211,6 @@ function render() {
 						color: mapMeshColor,
 						transparent:true, 
 						opacity:mapMeshOpacity, 
-						depthTest:true,
 						alphaTest:0.02, // below this opacity threshold, te layer is not rendered
 						precision:'lowp',
 						side:THREE.DoubleSide 
@@ -280,9 +280,6 @@ function render() {
 		// The first occurrence counts as start though.
 		var t = 0;
         while (typeof start !== 'undefined') {
-
-			// console.log("current movement",start);
-
 
             var point1 = new THREE.Vector3(
 				o.x + start.source.x, 
