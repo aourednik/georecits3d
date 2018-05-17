@@ -1,6 +1,6 @@
 # GéoRécits3D: mapping journeys in space-time
 
-![GéoRécits journeys](img/space-time-prism3d.png)
+![GéoRécits journeys](img/georecits3d.png)
 
 Spatial mobility always involves at least two types of distances:
 
