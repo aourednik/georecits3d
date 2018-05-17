@@ -25,12 +25,26 @@
 	<script src="js/d3-scale-chromatic.v0.3.min.js"></script>
 </head>
 <body>
-<div id="sqrtscale">rotate <input type="checkbox" id="myCheck"></div>
+<div id="sqrtscale">
+
+	rotate <input type="checkbox" id="myCheck" checked>
+	
+	<input type="radio" id="dark" name="lightORdark" onclick="lightSwitch(this);" value="dark" checked>
+    <label for="contactChoice1">dark</label>
+    <input type="radio" id="light"name="lightORdark" onclick="lightSwitch(this);" value="light">
+	<label for="contactChoice2">light</label>
+	
+</div>
 
 <script>
 // globals
-var lines = Array(), xscaler, yscaler, tscaler, circlesizer, individuals, placesxyextent = Array(), xyratio, cube, o, mapMesh;
+var xscaler, yscaler, tscaler, circlesizer, individuals, placesxyextent = Array(), xyratio, cube, o, mapMesh;
 var colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// starting with dark scheme:
+var cubeColor = 0xffffff;
+var backgroundColor = 0x000000; 
+var mapMeshColor = 0xffffff;
 
 var renderer = new THREE.WebGLRenderer({
 	antialias:true
@@ -40,8 +54,8 @@ document.body.appendChild( renderer.domElement );
 
 // setting up the scene
 var scene = new THREE.Scene();
-// scene.background = new THREE.Color( 0xffffff );
-scene.fog = new THREE.FogExp2(0x000000,0.001);
+scene.background = new THREE.Color( backgroundColor );
+scene.fog = new THREE.FogExp2(backgroundColor,0.001);
 
 var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
@@ -102,22 +116,24 @@ function makecube() {
 	console.log(xyratio);
 	var geometry = new THREE.BoxGeometry( 120, 120 / xyratio, 200 ); // makes the cube around the origin
 	o = { x:-50 , y: -50/xyratio , t:-100 } // the origin coordiate
-	var material1 = new THREE.MeshBasicMaterial( { 
-		color: 0xffffff,
+	var material1 = new THREE.MeshPhongMaterial( { 
+		color: cubeColor,
 		transparent:true,
 		opacity:0.2,
 		side:THREE.DoubleSide
 	} );
-	var material2 = new THREE.MeshBasicMaterial( { 
-		color: 0xffffff,
+	var material2 = new THREE.MeshPhongMaterial( { 
+		color: cubeColor,
 		transparent:true,
 		opacity:0.08,
+        // blending:THREE.MultiplyBlending,
 		side:THREE.BackSide
 	} );
-	var material3 = new THREE.MeshBasicMaterial( { 
-		color: 0xffffff,
+	var material3 = new THREE.MeshPhongMaterial( { 
+		color: cubeColor,
 		transparent:true,
 		opacity:0.11,
+        // blending:THREE.MultiplyBlending,
 		side:THREE.BackSide
 	} );
 	var materials = [
@@ -133,9 +149,32 @@ function makecube() {
 	scene.add( cube );
 }
 
+
+// Use D3.js projection to create array of Three.js points/vectors from GeoJSON ring
+function ringToPoints(ring) {
+  return ring.map(function(point) {
+    var projected = projection(point);
+    return new THREE.Vector2(xscaler(-projected[0]), yscaler(projected[1]));
+  });
+}
+
+// Create Three.js polygon from GeoJSON Polygon
+function createPolygonShape(polygon) {
+  var outerRing = polygon[0];
+  var points = ringToPoints(outerRing, projection);
+  var polygonShape = new THREE.Shape(points);
+
+  polygon.slice(1).forEach(function(hole) {
+    points = ringToPoints(hole, projection);
+    var holeShape = new THREE.Shape(points);
+    polygonShape.holes.push(holeShape);
+  });
+  return polygonShape;
+}
+
 function render() {
 	space['places'].forEach(p => { 
-        p['x'] = xscaler(- projection([p.lon,p.lat])[0]);
+        p['x'] = xscaler(-projection([p.lon,p.lat])[0]);
 		p['y'] = yscaler(projection([p.lon,p.lat])[1]);
     });
 	space['movements'].forEach(m => {
@@ -150,40 +189,63 @@ function render() {
 	basemap.features
 		//.filter(bf => bf.properties.NAME == "Switzerland" | bf.properties.NAME == "Norway" | bf.properties.NAME == "Mongolia" | bf.properties.NAME == "France")
 		.forEach(bf => { 
-			bf.geometry.coordinates[0].forEach(currentgeom => { 
-				//console.log("currentgeom",currentgeom)
-				// var currentgeom = [[ 8.580555, 47.66861 ],[ 8.580555, 47.66861 ], [ 8.610254, 47.667732 ], [ 8.610254, 47.667732 ], [ 8.580555, 47.66861 ] ] 
-				var shapepoints = Array();
-				currentgeom.forEach(c => {
-					var projcor = projection([c[0],c[1]])
-					shapepoints.push(new THREE.Vector2(
-						xscaler(- projcor[0]), 
-						yscaler(projcor[1])
-					));
-				});
-				//console.log("shapepoints",shapepoints);
-				var mapShape = new THREE.Shape(shapepoints);
-				var geometry = new THREE.ShapeGeometry( mapShape );
-				var material1 = new THREE.MeshBasicMaterial( { 
-					color: 0xffffff,
-					transparent:true,
-					opacity:0.5,
-					side:THREE.DoubleSide 
-				} );
+			bf.geometry.coordinates.forEach(polygon => { // TODO handles multipolygons but not holes
+				// var po = [[ 8.580555, 47.66861 ],[ 8.580555, 47.66861 ], [ 8.610254, 47.667732 ], [ 8.610254, 47.667732 ], [ 8.580555, 47.66861 ] ] 			
+				//polygon.forEach(currentgeom => { 
+					/*
+					var shapepoints = Array();
+					currentgeom.forEach(c => {
+						if (c.length > 2) {console.log("currentcoor",c.length);}
+						var projcor = projection([c[0],c[1]])
+						shapepoints.push(new THREE.Vector2(
+							xscaler(- projcor[0]), 
+							yscaler(projcor[1])
+						));
+					});
+					*/
+					//console.log("shapepoints",shapepoints);
 
-				var mapMesh = new THREE.Mesh( geometry, material1 ) ;
-				cube.add( mapMesh );
-				mapMesh.position.set(o.x, o.y, o.t+0.5);
-				// add contour
-				var edges = new THREE.EdgesGeometry( geometry );
-				var line = new THREE.LineSegments( 
-					edges, 
-					new THREE.LineBasicMaterial( { color: 0x000000 } ) 
-				);
-				cube.add( line );
-				line.position.set(o.x, o.y, o.t+0.5);
-			});
-		});
+					var mapShape = createPolygonShape(polygon);
+
+					// currentgeom.forEach(c => {
+					// 	var projcor = projection([c[0],c[1]])
+					// 	shapepoints.push(new THREE.Vector2(
+					// 		xscaler(- projcor[0]), 
+					// 		yscaler(projcor[1])
+					// 	));
+					// });
+					
+					// polygonShape.holes.push(holeShape); // TODO add holes, see https://github.com/maptime-ams/geojson-3d/blob/gh-pages/js/geo.js
+
+					var geometry = new THREE.ShapeGeometry( mapShape );
+					var material1 = new THREE.MeshBasicMaterial( { 
+						color: mapMeshColor,
+						transparent:true, 
+						opacity:0.17, // lightgrey = hsl 0,0,0.83
+						// depthWrite:false,
+						depthTest:true,
+						alphaTest:0, // below this opacity threshold, te layer is not rendered
+						precision:'lowp',
+						// blending:THREE.AdditiveBlending  , // to hide overlaps
+						side:THREE.DoubleSide 
+					} );
+
+					var mapMesh = new THREE.Mesh( geometry, material1 ) ;
+					mapMesh.name = "map";
+					cube.add( mapMesh );
+					mapMesh.position.set(o.x, o.y, o.t+0.5);
+					// add contour
+					var edges = new THREE.EdgesGeometry( geometry );
+					var line = new THREE.LineSegments( 
+						edges, 
+						new THREE.LineBasicMaterial( { color: backgroundColor } ) 
+					);
+					line.name = "mapl";
+					cube.add( line );
+					line.position.set(o.x, o.y, o.t+0.5);
+				});	
+			// });
+	});
 
 	
 	////////////////////////////////////
@@ -281,17 +343,13 @@ function render() {
             start = mov.filter(m => m.source.id == start.target.id)[0];
         }
 
-		console.log("geometry",geometry);
+		// console.log("geometry",geometry);
 		var line=new THREE.Line( geometry, material );
-		console.log("line",line);
-		lines.push(line);	
+		// console.log("line",line);
+		// lines.push(line);
+        cube.add( line );	
 
     });
-
-	console.log("lines",lines);
-	lines.forEach(l => { 
-		cube.add( l );
-	});
 
 	animate();
 }
@@ -323,10 +381,13 @@ function definesizers_t() {
 }
 
 var cylinderMesh = function( startPoint, endPoint, colour ) {
-	var cylmaterial = new THREE.MeshPhongMaterial( { 
+	var cylmaterial = new THREE.MeshStandardMaterial( { 
 		color: colour,
 		transparent:true,
+        roughness:1,
+        metalness:0,
 		opacity:0.7,
+        // blending:THREE.AdditiveBlending,
 		side:THREE.FrontSide
 	} );
 	var cylLength = new THREE.Vector3().subVectors(endPoint, startPoint).length(); // find the length of a cylinder
@@ -346,6 +407,39 @@ var cylinderMesh = function( startPoint, endPoint, colour ) {
 	return [cyl1,cyl2];
 }
 
+function lightSwitch(myRadio) {
+    // alert('New value: ' + myRadio.value);
+    currentValue = myRadio.value;
+
+    if (currentValue == 'dark') {
+        cubeColor = 0xffffff;
+        backgroundColor = 0x000000; 
+        mapMeshColor = 0xffffff;
+        d3.select("#sqrtscale").style("color","white");
+	} else if (currentValue == 'light') {
+        cubeColor = 0x000000; 
+        backgroundColor = 0xffffff; 
+        mapMeshColor = 0x000000; 
+        d3.select("#sqrtscale").style("color","black");
+	}
+    scene.background = new THREE.Color( backgroundColor );
+    scene.fog = new THREE.FogExp2(backgroundColor,0.001);
+    // the cube has several materials, its material is an array
+    cube.material.forEach(m => { 
+        m.color.setHex( cubeColor );
+    });
+    cube.children
+        .filter(c => c.name == 'map')
+        .forEach(c => { 
+            c.material.color.setHex( mapMeshColor );
+    });
+    cube.children
+        .filter(c => c.name == 'mapl')
+        .forEach(c => { 
+            c.material.color.setHex( backgroundColor );
+    });
+}
+
 
 // rendering the object. similar to d3.tick()
 function animate() {
@@ -355,14 +449,6 @@ function animate() {
 		cube.rotation.x += 0.005;
 		cube.rotation.y += 0.005;
 	}
-	
-
-	/*
-	lines.forEach(l => { 
-		l.rotation.x += 0.003;
-    	l.rotation.y += 0.003;
-	});
-	*/
 
 	controls.update();
 
