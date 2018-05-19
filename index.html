@@ -1,4 +1,19 @@
 <!DOCTYPE html>
+<!-- Copyright (C) 2018 André Ourednik
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
 <html>
 <head>
 	<meta charset=utf-8>
@@ -37,9 +52,25 @@
 </div>
 
 <script>
+/**
+	* @author aourednik / https://github.com/aourednik
+*/
+
 // globals
 var xscaler, yscaler, tscaler, circlesizer, individuals, placesxyextent = Array(), xyratio, cube, o, mapMesh;
 var colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// eventual GET parameter datafolder
+function getUrlParameter(name) {
+    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+    var results = regex.exec(location.search);
+    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+};
+var datafolder = 'data';
+if (getUrlParameter('datafolder')!="") {
+	datafolder = getUrlParameter('datafolder');
+}
 
 // starting with dark scheme:
 var cubeColor = 0xffffff;
@@ -64,8 +95,13 @@ scene.fog = new THREE.Fog(backgroundColor,500,1000);
 
 var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
+// Orbit controls allow the camera to orbit around a target
 var controls = new THREE.OrbitControls( camera );
-camera.position.set( 0, 0, 210 );
+// locks the x-axis:
+// controls.minPolarAngle = Math.PI/2;
+// controls.maxPolarAngle = Math.PI/2
+
+camera.position.set( 100, 100, 210 );
 camera.lookAt( new THREE.Vector3( 0, 0, 0 ) );
 controls.update();
 
@@ -95,9 +131,9 @@ var projection = d3.geoNaturalEarth1()// automatic centering has trouble with th
 // load data
 // threejs has THREE.FileLoader() but data taubular handling will be easier with D3
 Promise.all([
-    d3.csv("data/places.csv"),
-    d3.csv("data/movements.csv"),
-    d3.json("data/basemap.geojson")
+    d3.csv(datafolder + "/places.csv"),
+    d3.csv(datafolder + "/movements.csv"),
+    d3.json(datafolder + "/basemap.geojson")
 ]).then(([pla,mov,bas]) => {
     space = {
 		'places' : pla,
@@ -191,8 +227,8 @@ function render() {
 		p['y'] = yscaler(projection([p.lon,p.lat])[1]);
     }); // todo: this takes time. Work with projection scale. 
 	space['movements'].forEach(m => {
-        m['source'] = space['places'].filter(p => p.id == m.source)[0];
-		m['target'] = space['places'].filter(p => p.id == m.target)[0];
+        m['source'] = space['places'].filter(p => p.id == m.source & p.idperson == m.idperson)[0];
+		m['target'] = space['places'].filter(p => p.id == m.target & p.idperson == m.idperson)[0];
     });
 	console.log(space);
 
@@ -259,20 +295,44 @@ function render() {
 
 	definesizers_t();
 
-	individuals.forEach(individual => { 
-		var clr = new THREE.Color( colorScale(individual.key) );
-		// console.log(colorScale(individual.key));
-		// clr.setHex( Math.random() * 0xffffff );
+	// draw the GOAL if there is one
+	var goal = space['places'].filter(p => p.id == "GOAL")[0];
+	if (typeof goal !== 'undefined') {
+		console.log(goal);
+		var clr = new THREE.Color( 'red' );
 		var material = new THREE.LineBasicMaterial( { 
 				color: clr,
 				linewidth: 5
-				// , fog:false
 			});
 		var geometry = new THREE.Geometry(); 
-		// var geometry = new THREE.CylinderGeometry(); // TODO allows for thickness			
-        
+		var point1 = new THREE.Vector3(
+				o.x + goal.x, 
+				o.y + goal.y, 
+				o.t
+			)
+		geometry.vertices.push(point1);
+		var point2 = new THREE.Vector3(
+				o.x + goal.x, 
+				o.y + goal.y, 
+				150
+			)
+		geometry.vertices.push(point2);
+		var line=new THREE.Line( geometry, material );
+		line.castShadow = true;
+        cube.add( line );	
+	}
+
+	//draw the individuals
+
+	individuals.forEach(individual => { 
+		var clr = new THREE.Color( colorScale(individual.key) );
+		var material = new THREE.LineBasicMaterial( { 
+				color: clr,
+				linewidth: 2 // has only effect in Safari
+			});
+		var geometry = new THREE.Geometry(); 
 		var mov = space['movements'].filter(m => m.idperson == individual.key);
-        console.log(individual.key,mov);
+        // console.log(individual.key,mov);
 
         var start = mov[0];
 
