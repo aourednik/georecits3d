@@ -15,6 +15,18 @@ It is written using HTML5 and JavaScript, and uses the visualisation frameworks 
 
 ## Documentation
 
+To run the app, simply __open _index.html___ with a web browser. With Firefox, the app can run locally.
+
+By default, the app fetches its data from the _/data_ folder. You can specify another folder in your navigator by adding a ```?datafolder=your/datafolder```to the url. Example :
+
+http://your.host/georecits3d/index.html?datafolder=data_examples/migration
+
+or, locally
+
+file:///your/path/to/georecits3d/index.html?datafolder=data_examples/migration
+
+### Configuration files
+
 Configuration csv files for journeys identical to those of [GéoRécits](https://github.com/aourednik/georecits) can be used.
 
 - [Full documentation HERE](https://ourednik.info/georecits3d/)
@@ -22,3 +34,19 @@ Configuration csv files for journeys identical to those of [GéoRécits](https:/
 - [Running example HERE](https://ourednik.info/georecits3d/v01/)
 
 ![GéoRécits journeys](img/georecits3d.gif)
+
+### Chrome and Safari
+
+Géorectis3D needs to access local files. This is not allowed in Chrome and Safari. This means it either needs to be uploaded to a server _or_ you can also run a local server, for instance with the following commands in your terminal:
+
+```bash
+cd your/path/to/georecits3d/
+python3 -m http.server
+```
+
+The terminal should then aswer
+
+```bash
+Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
+```
+The app can then be run by accessing the given url, i.e. http://0.0.0.0:8000/.
