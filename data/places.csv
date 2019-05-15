@@ -1,13 +1,60 @@
-id,idperson,nameplace,duration,lon,lat
-"Khovsgol",A,"Khovsgol",0, 100.306972 ,50.518361
-"OulanBator",A,"Oulan-Bator",350,106.897743,47.909978
-"EPFL",A,"EPFL",30,6.566523,46.518893 
-"Zurich",A,"Zürich",168, 8.497569,47.379230
-"Neuchatel",A,"Neuchâtel",0, 6.929542, 46.999307
-"Lausanne",B,"Lausanne",200,6.636700, 46.528931 
-"Geneve",B,"Genève",30, 6.147350, 46.211796
-"Paris",B,"Paris",500, 2.357351, 48.865550
-"Oslo",C,"Oslo",0, 10.763824,59.913063
-"Prague",C,"Prague",60,14.446370, 50.079606
-"ZurichC",C,"Zürich",500, 8.497569,47.379230
-"NeuchatelC",C,"Neuchâtel",0, 6.929542, 46.999307
+id,idperson,nameplace,duration,lat,lon
+Röcken,Nietzsche,Röcken,1993,51.2411, 12.1154
+Naumburg,Nietzsche,Naumburg (Saale),3105,51.15, 11.8125 
+NaumburgDomgymnasium,Nietzsche,Naumburg (Domgymnasium),172,51.156378, 11.812510
+Schulpforta,Nietzsche,Schulpforta Naumburg,547.5,51.1425, 11.752222
+Jena,Nietzsche,Jena,30,50.928084,11.586944
+Schulpforta2,Nietzsche,Naumburg (Saale),306,51.1425, 11.752222 
+Gorenzen,Nietzsche,Gorenzen,25,51.567121, 11.353730
+Schulpforta3,Nietzsche,Naumburg (Saale),1569,51.1425, 11.752222
+Bonn,Nietzsche,Bonn,365,50.733889, 7.102222
+Naumburg2,Nietzsche,Naumburg (Saale),60,51.15, 11.8125 
+Leipzig,Nietzsche,Leipzig,659,51.338889, 12.378889
+Meiningen,Nietzsche,Meiningen,5,50.568631, 10.416465
+Naumburg3,Nietzsche,Naumburg (Saale),411,51.15, 11.8125 
+Leipzig2,Nietzsche,Leipzig,181,51.338889, 12.378889
+Basel,Nietzsche,Basel,14,47.558611, 7.583611
+Tribschen,Nietzsche,Tribschen (Wagner's villa),7,47.041982, 8.329703
+Basel2,Nietzsche,Basel,154,47.558611, 7.583611
+Tribschen2,Nietzsche,Tribschen (Wagner's villa),7,47.041982, 8.329703
+Basel3,Nietzsche,Basel,365,47.558611, 7.583611
+Tribschen3,Nietzsche,Tribschen (Wagner's villa),7,47.041982, 8.329703
+Basel4,Nietzsche,Basel,481,47.558611, 7.583611
+Tribschen4,Nietzsche,Tribschen (Wagner's villa),2,47.041982, 8.329703
+Basel5,Nietzsche,Basel,1637,47.558611, 7.583611
+Clarens,Nietzsche,Clarens (bath),36.5,46.441677, 6.893987
+Maderanertal,Nietzsche,Maderanertal,36.5,46.772009, 8.755322
+GotthardPass,Nietzsche,Gotthard Pass,3.65, 46.558658, 8.563021
+Lugano,Nietzsche,Lugano,40.15,46.003445, 8.951783
+Gimmelwald,Nietzsche,Gimmelwald (mit Schwester),3.65,46.546944, 7.892755
+Silvaplana,Nietzsche,Silvaplana-Surlej,109.5,46.450564, 9.806179
+Livorno,Nietzsche,Livorno,36.5,43.551677, 10.306694
+Sorrento,Nietzsche,Sorrento,255.5,40.625476, 14.382658
+Napoli,Nietzsche,Napoli,109.5,40.847002, 14.265761
+Milano,Nietzsche,Milano,3.65,45.465704, 9.191059
+BadRagaz,Nietzsche,Bad Ragaz,36.5,47.005502, 9.501057
+Rosenlaui,Nietzsche,Rosenlaui,109.5,46.679959, 8.153436
+Kösen,Nietzsche,Kösen Bahnhof (betrunken mit Richter),3.65,51.1306, 11.7183
+Schwelm,Nietzsche,Schwelm (Konzert),3.65,51.2845, 7.2926
+Bayreuth,Nietzsche,Bayreuth,3.65,49.944,11.5744
+Bex,Nietzsche,Bex,3.65,46.248582, 7.006387
+Geneve,Nietzsche,Genève,3.65,46.2025, 6.147
+StMoritz,Nietzsche,StMoritz,109.5,46.487518, 9.833729
+Riva,Nietzsche,Riva,3.65, 45.884303, 10.841149
+Venezia,Nietzsche,Venezia,116.8,45.4377, 12.3255
+Marienbad,Nietzsche,Marienbad,109.5,49.96, 12.6931
+Genova,Nietzsche,Genova,730,44.408, 8.9321
+Stresa,Nietzsche,Stresa,3.65,45.884038, 8.527900
+Sils-Maria,Nietzsche,Sils-Maria,657,46.4295,9.7638
+Messina,Nietzsche,Messina,10.95, 38.192070, 15.554910
+Taormina,Nietzsche,Taormina,3.65,37.853574,15.288640
+Roma,Nietzsche,Roma,36.5,41.8941,12.4816
+Rapallo,Nietzsche,Rapallo,109.5,44.3494,9.2311
+Nice,Nietzsche,Nice,730,43.6971,7.2751
+Zürich,Nietzsche,Zürich,3.65,47.3749,8.5437
+Menton,Nietzsche,Menton,36.5,43.776,7.5076
+Ruta,Nietzsche,Ruta,36.5,44.3493,9.1547   
+Torino,Nietzsche,Torino,182.5,45.0717,7.6798
+Naumburg4,Nietzsche,Naumburg (Saale),2000,51.15, 11.8125 
+Weimar,Nietzsche,Weimar,1095,50.9815,11.3282
+Weimar2,Nietzsche,Weimar,0,50.9815,11.3282
