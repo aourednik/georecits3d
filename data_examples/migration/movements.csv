@@ -1,0 +1,14 @@
+source,target,idperson,time
+Quito,Panama,1,40
+Panama,SanJose,1,10
+SanJose,Mexico,1,30
+Mexico,Tijuana,1,30
+Tijuana,GOAL,1,20
+Habana,KeyWest,2,40
+KeyWest,GOAL,2,5
+Quito,Panama,3,2
+Panama,SanJose,3,10
+SanJose,Mexico,3,5
+Mexico,CiudadJuarez,3,5
+CiudadJuarez,ElPaso,3,3
+ElPaso,GOAL,3,20

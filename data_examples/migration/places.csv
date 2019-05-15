@@ -1,0 +1,17 @@
+id,idperson,nameplace,duration,lat,lon
+Quito,1,Quito,0,-0.15, -78.35
+Panama,1,Panama,3,8.9734, -79.5364
+SanJose,1,Sans José,3,9.9357, -84.09
+Mexico,1,Mexico,30,19.4044, -99.142
+Tijuana,1,Tijuana,60,32.4907, -116.9635
+GOAL,1,New York,0,40.7145, -74.0705
+Habana,2,La Habana, 0, 23.1075, -82.3782
+KeyWest,2,Key West, 20, 24.5534, -81.796 
+GOAL,2,New York,0,40.7145, -74.0705
+Quito,3,Quito,0,-0.15, -78.35
+Panama,3,Panama,3,8.9734, -79.5364
+SanJose,3,Sans José,3,9.9357, -84.09
+Mexico,3,Mexico,30,19.4044, -99.142
+CiudadJuarez,3,CiudadJuarez,60,31.7415,-106.4767
+ElPaso,3,El Paso,1,31.7613, -106.4879
+GOAL,3,New York,0,40.7145, -74.0705
